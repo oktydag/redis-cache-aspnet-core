@@ -1,1 +1,3 @@
-Redis Cache Usage Project
+Redis Cache Usage 
+- ServiceStack.Redis
+- Distributed Cache
