@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using RedisCache.Helpers;
 using RedisCache.Model;
 using ServiceStack.Redis;
@@ -14,6 +16,27 @@ namespace RedisCache.Controllers
     [ApiController]
     public class HomeController : ControllerBase
     {
+        private readonly IDistributedCache _distributedCache;
+
+        public HomeController(IDistributedCache distributedCache)
+        {
+            _distributedCache = distributedCache;
+        }
+
+        [Route("getfirstname")]
+        public async Task<string> GetFirstNameAsDistributed()
+        {
+            const string KEY = "firstname";
+
+            var firstname = await _distributedCache.GetStringAsync(KEY);
+
+            if (!string.IsNullOrEmpty(firstname)) return $"key = {KEY} & value {firstname}"; ;
+
+            const string VALUE = "oktay dagdelen";
+            await _distributedCache.SetStringAsync(firstname, VALUE);
+            return $"key = {KEY} & value {VALUE}";
+        }
+
         [Route("set")]
         public HttpStatusCode Set()
         {
@@ -44,7 +67,6 @@ namespace RedisCache.Controllers
 
         }
 
-
         [Route("lists")]
         public string SetLists()
         {
@@ -62,18 +84,15 @@ namespace RedisCache.Controllers
 
                 var userNames = client.Lists[USERS_LIST_NAME];
 
-
                 StringBuilder names = new StringBuilder();
                 foreach (var username in userNames)
                 {
                     names.AppendLine($"Welcome {username}");
                 }
 
-
                 return names.ToString();
             }
         }
-
 
         [Route("setcomplextype")]
         public string ComplexType()
@@ -86,7 +105,7 @@ namespace RedisCache.Controllers
                 {
                     Id = movieClient.GetNextSequence(),
                     Title = "Spider Man",
-                    PublicationYear = new DateTime(2002,6,14),
+                    PublicationYear = new DateTime(2002, 6, 14),
                     Actors = new List<Actor>
                              {
                                new Actor {Name = "Tobey Maguire", Age = 27},
@@ -101,7 +120,6 @@ namespace RedisCache.Controllers
 
         }
 
-
         [Route("getcomplextype")]
         public string GetComplexType()
         {
@@ -113,7 +131,7 @@ namespace RedisCache.Controllers
                 var movie = movieClient.GetById(SPIDERMAN_ID);
 
                 StringBuilder movieInfo = new StringBuilder();
-                movieInfo.AppendLine($"Movie Name = {movie.Title}");               
+                movieInfo.AppendLine($"Movie Name = {movie.Title}");
                 movieInfo.AppendLine($"Movie Publication Year = {movie.PublicationYear}");
                 movieInfo.AppendLine($"Movie Actors = ");
 
